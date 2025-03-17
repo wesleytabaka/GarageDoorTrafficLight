@@ -9,7 +9,7 @@ const int _nocarDistance = 450; // Centimeters.  About 15 feet
 const int _nearDistance = 60; // About 2 feet
 const int _stopDistance = 4; // About 2 inches
 
-Mode mode = DOOR;
+Mode mode = DOORANDPARKING;
 
 const float _updateInterval = 500.0; // 
 
@@ -25,6 +25,14 @@ const int G_PIN = 11;
 //  Do not edit below this line
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//  Bench testing variables
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////
+String lastInput = "";
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -85,19 +93,49 @@ DoorState GetDoorState(){
   String input = Serial.readStringUntil('-');
   input.trim();
   if(input.length() > 0){
-    if(input == "O"){
+    lastInput = input;
+    int field2 = lastInput.indexOf(",");
+    String input_door = input.substring(0, field2);
+    String input_parking = lastInput.substring(field2 + 1);
+    if(input_door == "O"){
       return OPEN;
     }
-    if(input == "C"){
+    if(input_door == "C"){
       return CLOSED;
     }
-    if(input == "M"){
+    if(input_door == "M"){
       return MOVING;
     }
   }
   else {
     return current_door_state;
   }
+}
+
+ParkingState GetParkingState(){
+    // read pin for open
+  // read pin for closed
+  // decide what the state is and return it.
+//  Serial.println("Enter door state: O, C, M (Open, Closed, Moving): ");
+//  String input = Serial.readStringUntil('-');
+//  input.trim();
+//  if(input.length() > 0){
+    int field2 = lastInput.indexOf(",");
+    String input_door = lastInput.substring(0, field2);
+    String input_parking = lastInput.substring(field2 + 1);
+    if(input_parking == "X"){
+      return NOCAR;
+    }
+    if(input_parking == "N"){
+      return NEAR;
+    }
+    if(input_parking == "S"){
+      return STOP;
+    }
+//  }
+//  else {
+//    return current_parking_state;
+//  }
 }
 
 // Sets the last state and next state for the door.
@@ -108,10 +146,14 @@ void UpdateDoorState(){
     next_door_state = from_door_state;
     from_door_state = current_door_state;
   }
-
 }
 
-// Determine what the light should be doing based on flash or solid patterns.
+void UpdateParkingState(){
+  current_parking_state = GetParkingState();
+  
+}
+
+// Determine what the light should be doing based on flash or solid patterns and set the output pin levels.
 void ShowLight(){
   int flasher = floor(effectCounter / (flashPeriodLength / 2));
 
@@ -139,10 +181,44 @@ void ShowLight(){
 
 
 // Door and Parking mode only
-//void ProcessDoorAndParking(){
-//  //if(current_parking_state == STOP || current_parking_state == NEAR)
-//  if(current_door_state == MOVING)
-//}
+void ProcessDoorAndParking(){
+  // "Leaving" -- initially car present
+  if(current_door_state == MOVING && from_door_state == CLOSED && (current_parking_state == NEAR || current_parking_state == STOP)){
+    SetLight(true, false, false, SOLID, SOLID, SOLID);
+  }
+  if(current_door_state == MOVING && from_door_state == OPEN && (current_parking_state == NEAR || current_parking_state == STOP)){
+    SetLight(true, false, false, SOLID, SOLID, SOLID);
+  }
+  if(current_door_state == OPEN && (current_parking_state == NEAR || current_parking_state == STOP)){ 
+    SetLight(false, false, true, SOLID, SOLID, SOLID);
+  }
+  if(current_door_state == CLOSED && (current_parking_state == NEAR || current_parking_state == STOP)){ 
+    SetLight(true, false, false, SOLID, SOLID, SOLID);
+  }
+
+  // "Arriving" -- initially no car.
+  if(current_door_state == MOVING && from_door_state == CLOSED && current_parking_state == NOCAR){
+    SetLight(false, true, false, SOLID, FLASH, SOLID);
+  }
+  if(current_door_state == MOVING && from_door_state == OPEN && current_parking_state == NOCAR){
+    SetLight(false, true, false, SOLID, SOLID, SOLID);
+  }
+  if(current_door_state == OPEN){ 
+    if(current_parking_state == NOCAR){ // NOCAR
+      SetLight(false, false, true, SOLID, SOLID, SOLID);
+    }
+    if(current_parking_state == NEAR){ // NEAR
+      SetLight(false, true, false, SOLID, SOLID, SOLID);
+    }
+    if(current_parking_state == STOP){ // STOP
+      SetLight(true, false, false, SOLID, SOLID, SOLID);
+    }
+  }
+  // Irrelevant when no car
+  if(current_door_state == CLOSED){ 
+    SetLight(true, false, false, SOLID, SOLID, SOLID);
+  }
+}
 
 // Door mode only
 void ProcessDoor(){
@@ -197,10 +273,11 @@ void setup() {
 void loop() {
   // DOORANDPARKING
   UpdateDoorState();
+  UpdateParkingState();
 
-//  if(mode == DOORANDPARKING){
-//    ProcessDoorAndParking();
-//  }
+  if(mode == DOORANDPARKING){
+    ProcessDoorAndParking();
+  }
   if(mode == DOOR){
     ProcessDoor();
   }
