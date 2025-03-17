@@ -1,0 +1,4 @@
+enum Pattern{
+  SOLID,
+  FLASH
+};
