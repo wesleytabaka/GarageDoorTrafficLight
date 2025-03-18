@@ -1,7 +1,6 @@
 #include "Mode.h"
 #include "DoorState.h"
 #include "ParkingState.h"
-#include "ParkingAndDoorState.h"
 #include "CarState.h"
 #include "RunState.h"
 #include "Pattern.h"
@@ -14,6 +13,7 @@ const int _stopDistance = 4; // About 2 inches
 Mode mode = DOORANDPARKING;
 
 const float _updateInterval = 500.0; // 
+const float _standbyInterval = 1500.0;
 
 const float flashRate = 1000.0;
 
@@ -65,7 +65,7 @@ Pattern G_pattern = SOLID;
 /////////////////////////////////////////////////////////////////////////////////////////////////
 // State tracking
 RunState runstate = STANDBY;
-CarState carstate;
+CarState carstate = NULL;
 
 DoorState current_door_state = NULL;
 DoorState from_door_state = NULL;
@@ -119,6 +119,7 @@ DoorState GetDoorState(){
   }
 }
 
+// Real world state from sensors.  This is implemented with serial input while on the bench and without real sensors.
 ParkingState GetParkingState(){
     // read pin for open
   // read pin for closed
@@ -157,7 +158,7 @@ void UpdateDoorState(){
 
 void UpdateParkingState(){
   current_parking_state = GetParkingState();
-  
+  carstate = carstate == NULL ? (current_parking_state == NOCAR ? ARRIVING : LEAVING) : carstate;
 }
 
 // Determine what the light should be doing based on flash or solid patterns and set the output pin levels.
@@ -208,6 +209,17 @@ void ProcessDoor(){
   }
 }
 
+void EnterStandby(){
+  runstate = STANDBY;
+  carstate = NULL; // set "from" parking state to NULL.  or set carstate to NULL.
+  SetLight(false, false, false, SOLID, SOLID, SOLID); //  turn all lights off.
+  ShowLight(); // Write to output pins.
+}
+
+void EnterWorking(){
+  runstate = WORKING;
+}
+
 /////////////////////////////////////////////////////////////////////////////////////////////////
 //
 //  Initial conditions
@@ -245,19 +257,27 @@ void setup() {
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 void loop() {
-  // DOORANDPARKING
   UpdateDoorState();
-  UpdateParkingState();
-
-  if(mode == DOORANDPARKING){
-    ProcessDoorAndParking();
+  if(current_door_state == MOVING){
+    runstate = WORKING;
   }
-  if(mode == DOOR){
-    ProcessDoor();
-  }
-
-  ShowLight();
-  effectCounter = (effectCounter + 1) % flashPeriodLength;
-  delay(_updateInterval);
   
+  if(runstate == WORKING){
+    if(mode == DOOR){
+      ProcessDoor();
+    }
+
+    if(mode == DOORANDPARKING){
+      UpdateParkingState();
+      ProcessDoorAndParking();
+    }
+
+    ShowLight(); // 
+    effectCounter = (effectCounter + 1) % flashPeriodLength;
+    delay(_updateInterval);
+  }
+  
+  if(runstate == STANDBY){
+    delay(_standbyInterval);
+  }
 }
