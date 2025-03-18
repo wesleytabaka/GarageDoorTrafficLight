@@ -190,7 +190,61 @@ void ShowLight(){
 
 // Door and Parking mode only
 void ProcessDoorAndParking(){
+//  "Leaving"
+//  C,S -> SR -- Same
+  if(carstate == LEAVING){
+  if(current_door_state == CLOSED){
+    SetLight(true, false, false, SOLID, SOLID, SOLID);
+  }
+  
+//  M,S -> SR -- Same
+  if(current_door_state == MOVING && from_door_state == CLOSED){
+    SetLight(true, false, false, SOLID, SOLID, SOLID);
+  }
+//  O,S -> SG -- need to know if the car was present at door activation time.
+  if(current_door_state == OPEN){
+    SetLight(false, false, true, SOLID, SOLID, SOLID);
+  }
+//  O,N -> SG -- need to know if the car was present at door activation time.
+//  O,X -> SG -- Same
+//  M,X -> SY -- need to know if the car was present at door activation time.
+//  C,X -> SR
+//  STANDBY -> OFF
+  }
+//  
+//  
+//  "Arriving"
+  if(carstate == ARRIVING){
+    
 
+//  C,X 
+//  M,X -> FY
+    if(current_door_state == MOVING && from_door_state == CLOSED){
+      SetLight(false, true, false, SOLID, FLASH, SOLID);
+    }
+//  O,X -> SG
+    if(current_door_state == OPEN && current_parking_state == NOCAR){
+      SetLight(false, false, true, SOLID, SOLID, SOLID);
+    }
+//  O,N -> SY -- need to know if the car was present at door activation time.
+    if(current_door_state == OPEN && current_parking_state == NEAR){
+      SetLight(false, true, false, SOLID, SOLID, SOLID);
+    }
+//  O,S -> SR -- need to know if the car was present at door activation time.
+    if(current_door_state == OPEN && current_parking_state == STOP){
+      SetLight(true, false, false, SOLID, SOLID, SOLID);
+    }
+//    "Get out of car and close garage"
+//  M,N or M,S -> SR
+    if(current_door_state == MOVING && from_door_state == OPEN){
+      SetLight(true, false, false, SOLID, SOLID, SOLID);
+    }
+//  C,N or C,S -> SR
+    if(current_door_state == CLOSED && from_door_state == CLOSED){
+      SetLight(true, false, false, SOLID, SOLID, SOLID);
+    }
+  }
+//  STANDBY
 }
 
 // Door mode only
