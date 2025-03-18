@@ -1,0 +1,4 @@
+enum RunState {
+  WORKING,
+  STANDBY
+};

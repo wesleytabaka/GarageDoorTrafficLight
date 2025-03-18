@@ -2,6 +2,8 @@
 #include "DoorState.h"
 #include "ParkingState.h"
 #include "ParkingAndDoorState.h"
+#include "CarState.h"
+#include "RunState.h"
 #include "Pattern.h"
 
 // Settings
@@ -14,6 +16,8 @@ Mode mode = DOORANDPARKING;
 const float _updateInterval = 500.0; // 
 
 const float flashRate = 1000.0;
+
+const int standbyTimeout = 60000; // Turn off after no changes.
 
 // Pin setup
 const int R_PIN = 6;
@@ -60,6 +64,9 @@ Pattern G_pattern = SOLID;
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 // State tracking
+RunState runstate = STANDBY;
+CarState carstate;
+
 DoorState current_door_state = NULL;
 DoorState from_door_state = NULL;
 DoorState next_door_state = NULL;
@@ -182,42 +189,7 @@ void ShowLight(){
 
 // Door and Parking mode only
 void ProcessDoorAndParking(){
-  // "Leaving" -- initially car present
-  if(current_door_state == MOVING && from_door_state == CLOSED && (current_parking_state == NEAR || current_parking_state == STOP)){
-    SetLight(true, false, false, SOLID, SOLID, SOLID);
-  }
-  if(current_door_state == MOVING && from_door_state == OPEN && (current_parking_state == NEAR || current_parking_state == STOP)){
-    SetLight(true, false, false, SOLID, SOLID, SOLID);
-  }
-  if(current_door_state == OPEN && (current_parking_state == NEAR || current_parking_state == STOP)){ 
-    SetLight(false, false, true, SOLID, SOLID, SOLID);
-  }
-  if(current_door_state == CLOSED && (current_parking_state == NEAR || current_parking_state == STOP)){ 
-    SetLight(true, false, false, SOLID, SOLID, SOLID);
-  }
 
-  // "Arriving" -- initially no car.
-  if(current_door_state == MOVING && from_door_state == CLOSED && current_parking_state == NOCAR){
-    SetLight(false, true, false, SOLID, FLASH, SOLID);
-  }
-  if(current_door_state == MOVING && from_door_state == OPEN && current_parking_state == NOCAR){
-    SetLight(false, true, false, SOLID, SOLID, SOLID);
-  }
-  if(current_door_state == OPEN){ 
-    if(current_parking_state == NOCAR){ // NOCAR
-      SetLight(false, false, true, SOLID, SOLID, SOLID);
-    }
-    if(current_parking_state == NEAR){ // NEAR
-      SetLight(false, true, false, SOLID, SOLID, SOLID);
-    }
-    if(current_parking_state == STOP){ // STOP
-      SetLight(true, false, false, SOLID, SOLID, SOLID);
-    }
-  }
-  // Irrelevant when no car
-  if(current_door_state == CLOSED){ 
-    SetLight(true, false, false, SOLID, SOLID, SOLID);
-  }
 }
 
 // Door mode only
@@ -242,6 +214,8 @@ void ProcessDoor(){
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 void setup() {
+  runstate = STANDBY;
+  
   pinMode(R_PIN, OUTPUT);
   pinMode(Y_PIN, OUTPUT);
   pinMode(G_PIN, OUTPUT);

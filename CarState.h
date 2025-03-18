@@ -1,0 +1,4 @@
+enum CarState {
+  ARRIVING,
+  LEAVING
+};
