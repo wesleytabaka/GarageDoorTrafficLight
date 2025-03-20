@@ -10,7 +10,9 @@ const int _nocarDistance = 450; // Centimeters.  About 15 feet
 const int _nearDistance = 60; // About 2 feet
 const int _stopDistance = 4; // About 2 inches
 
-Mode mode = DOORANDPARKING;
+const int bennigansModeTiming[3] = {14200, 4200, 11200}; // G, Y, R
+
+Mode mode = BENNIGANS;
 
 const float _updateInterval = 500.0; // 
 const float _standbyInterval = 1500.0;
@@ -47,6 +49,9 @@ const int flashPeriodLength = floor(flashRate / _updateInterval);
 
 // Clock for managing Patterns
 int effectCounter = 0;
+
+// Maintain the state of Bennigans mode.
+int bennigansState = 0;
 
 // Stores the on or off state of each color.
 bool R = false;
@@ -263,6 +268,23 @@ void ProcessDoor(){
   }
 }
 
+void ProcessBennigans(){
+  switch(bennigansState){
+    case 0:
+      SetLight(false, false, true, SOLID, SOLID, SOLID);
+      break;
+    case 1:
+      SetLight(false, true, false, SOLID, SOLID, SOLID);
+      break;
+    case 2:
+      SetLight(true, false, false, SOLID, SOLID, SOLID);
+      break;
+  }
+  ShowLight();
+  delay(bennigansModeTiming[bennigansState]);
+  bennigansState = (bennigansState + 1) % 3;
+}
+
 void EnterStandby(){
   runstate = STANDBY;
   carstate = NULL; // set "from" parking state to NULL.  or set carstate to NULL.
@@ -280,7 +302,7 @@ void EnterWorking(){
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 void setup() {
-  runstate = STANDBY;
+  runstate = WORKING;
   
   pinMode(R_PIN, OUTPUT);
   pinMode(Y_PIN, OUTPUT);
@@ -317,18 +339,26 @@ void loop() {
   }
   
   if(runstate == WORKING){
+    if(mode == BENNIGANS){
+      ProcessBennigans();
+    }
+    
     if(mode == DOOR){
       ProcessDoor();
+      ShowLight(); // 
+      effectCounter = (effectCounter + 1) % flashPeriodLength;
+      delay(_updateInterval);
     }
 
     if(mode == DOORANDPARKING){
       UpdateParkingState();
       ProcessDoorAndParking();
+      ShowLight(); // 
+      effectCounter = (effectCounter + 1) % flashPeriodLength;
+      delay(_updateInterval);
     }
 
-    ShowLight(); // 
-    effectCounter = (effectCounter + 1) % flashPeriodLength;
-    delay(_updateInterval);
+
   }
   
   if(runstate == STANDBY){
