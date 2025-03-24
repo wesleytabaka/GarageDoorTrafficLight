@@ -72,7 +72,7 @@ Pattern G_pattern = SOLID;
 /////////////////////////////////////////////////////////////////////////////////////////////////
 // State tracking
 RunState runstate = STANDBY;
-CarState carstate = NULL;
+CarState carstate = RESET;
 
 DoorState current_door_state = NULL;
 DoorState from_door_state = NULL;
@@ -103,11 +103,13 @@ DoorState GetDoorState(){
   // read pin for open
   // read pin for closed
   // decide what the state is and return it.
-  Serial.println("Enter door state: O, C, M (Open, Closed, Moving): ");
   String input = Serial.readStringUntil('-');
   input.trim();
   if(input.length() > 0){
     lastInput = input;
+    if(input == "STANDBY"){
+      EnterStandby();
+    }
     int field2 = lastInput.indexOf(",");
     String input_door = input.substring(0, field2);
     String input_parking = lastInput.substring(field2 + 1);
@@ -165,7 +167,14 @@ void UpdateDoorState(){
 
 void UpdateParkingState(){
   current_parking_state = GetParkingState();
-  carstate = carstate == NULL ? (current_parking_state == NOCAR ? ARRIVING : LEAVING) : carstate;
+  if(carstate == RESET){
+    if(current_parking_state == NOCAR){
+      carstate = ARRIVING;
+    }
+    else {
+      carstate = LEAVING;
+    }
+  }
 }
 
 // Determine what the light should be doing based on flash or solid patterns and set the output pin levels.
@@ -176,7 +185,6 @@ void ShowLight(){
   bool this_Y = Y && (Y_pattern == SOLID || (Y_pattern == FLASH && flasher == 0));
   bool this_G = G && (G_pattern == SOLID || (G_pattern == FLASH && flasher == 0));
 
-  Serial.println("FLASHER: " + String(flasher ? "ON" : "OFF"));
 
 //  Serial.println(" _ ");
 //  Serial.println(String("|\e[31m") + String(this_R ? "R" : " ") + String("\e[0m|"));
@@ -222,7 +230,7 @@ void ProcessDoorAndParking(){
 //  
 //  "Arriving"
   if(carstate == ARRIVING){
-    
+
 
 //  C,X 
 //  M,X -> FY
@@ -309,7 +317,7 @@ void EnterWorking(){
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 void setup() {
-  runstate = WORKING;
+  runstate = STANDBY;
   
   pinMode(R_PIN, OUTPUT);
   pinMode(Y_PIN, OUTPUT);
