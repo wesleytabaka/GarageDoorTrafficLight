@@ -20,7 +20,7 @@ const float _standbyInterval = 1500.0;
 
 const float flashRate = 1000.0;
 
-const int standbyTimeout = 60000; // Turn off after no changes.
+const float standbyTimeout = 10000.0; // Turn off after no changes.
 
 // Pin setup
 const int R_PIN = 6;
@@ -65,6 +65,8 @@ Pattern R_pattern = SOLID;
 Pattern Y_pattern = SOLID;
 Pattern G_pattern = SOLID;
 
+float standbyTimeoutRemaining;
+
 /////////////////////////////////////////////////////////////////////////////////////////////////
 //
 //  Door and Parking Status
@@ -77,10 +79,12 @@ CarState carstate = RESET;
 DoorState current_door_state = NULL;
 DoorState from_door_state = NULL;
 DoorState next_door_state = NULL;
+DoorState last_tick_door_state = NULL;
 
 ParkingState current_parking_state = NULL;
 ParkingState from_parking_state = NULL;
 ParkingState next_parking_state = NULL;
+ParkingState last_tick_parking_state = NULL;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -157,6 +161,7 @@ ParkingState GetParkingState(){
 
 // Sets the last state and next state for the door.
 void UpdateDoorState(){
+  last_tick_door_state = current_door_state;
   current_door_state = GetDoorState();
   if(current_door_state == next_door_state){ // i.e., not OPEN or CLOSED.
     // reverse the states:
@@ -166,6 +171,8 @@ void UpdateDoorState(){
 }
 
 void UpdateParkingState(){
+  last_tick_parking_state = current_parking_state;
+  from_parking_state = current_parking_state;
   current_parking_state = GetParkingState();
   if(carstate == RESET){
     if(current_parking_state == NOCAR){
@@ -344,6 +351,8 @@ void setup() {
   if(current_door_state == CLOSED){
     next_door_state = OPEN;
   }
+
+  standbyTimeoutRemaining = standbyTimeout;
 }
 
 
@@ -354,6 +363,7 @@ void setup() {
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 void loop() {
+  Serial.println("runstate: " + String(runstate) + ".  last_tick_door_state: " + String(last_tick_door_state) + ".  " + "current_door_state: " + String(current_door_state) + ".  last_tick_parking_state: " + String(last_tick_parking_state) + "  current_parking_state: " + String(current_parking_state));
   UpdateDoorState();
   if(current_door_state == MOVING){
     runstate = WORKING;
@@ -368,6 +378,12 @@ void loop() {
       ProcessDoor();
       ShowLight(); // 
       effectCounter = (effectCounter + 1) % flashPeriodLength;
+      if(last_tick_door_state == current_door_state && standbyTimeoutRemaining > 0.0){
+        standbyTimeoutRemaining -= _updateInterval;
+      }
+      else {
+        standbyTimeoutRemaining = standbyTimeout; // Reset the standby timeout.
+      }
       delay(_updateInterval);
     }
 
@@ -376,9 +392,18 @@ void loop() {
       ProcessDoorAndParking();
       ShowLight(); // 
       effectCounter = (effectCounter + 1) % flashPeriodLength;
+      if(last_tick_door_state == current_door_state && last_tick_parking_state == current_parking_state && standbyTimeoutRemaining > 0.0){
+        standbyTimeoutRemaining -= _updateInterval;
+      }
+      else {
+        standbyTimeoutRemaining = standbyTimeout; // Reset the standby timeout.
+      }
       delay(_updateInterval);
     }
 
+    if(standbyTimeoutRemaining <= 0.0){
+      EnterStandby();
+    }
 
   }
   
