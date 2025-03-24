@@ -11,8 +11,9 @@ const int _nearDistance = 60; // About 2 feet
 const int _stopDistance = 4; // About 2 inches
 
 const int bennigansModeTiming[3] = {14200, 4200, 11200}; // G, Y, R
+const int bennigansModeMaxCycles = 3; // x GYR cycles then go into standby.
 
-Mode mode = BENNIGANS;
+Mode mode = DOORANDPARKING;
 
 const float _updateInterval = 500.0; // 
 const float _standbyInterval = 1500.0;
@@ -52,6 +53,7 @@ int effectCounter = 0;
 
 // Maintain the state of Bennigans mode.
 int bennigansState = 0;
+int bennigansCycle = 0;
 
 // Stores the on or off state of each color.
 bool R = false;
@@ -278,16 +280,21 @@ void ProcessBennigans(){
       break;
     case 2:
       SetLight(true, false, false, SOLID, SOLID, SOLID);
+      bennigansCycle++;
       break;
   }
   ShowLight();
   delay(bennigansModeTiming[bennigansState]);
   bennigansState = (bennigansState + 1) % 3;
+  if(bennigansCycle >= bennigansModeMaxCycles){
+    EnterStandby();
+  }
 }
 
 void EnterStandby(){
   runstate = STANDBY;
-  carstate = NULL; // set "from" parking state to NULL.  or set carstate to NULL.
+  carstate = RESET;//NULL; // set "from" parking state to NULL.  or set carstate to NULL.
+  bennigansCycle = 0;
   SetLight(false, false, false, SOLID, SOLID, SOLID); //  turn all lights off.
   ShowLight(); // Write to output pins.
 }
