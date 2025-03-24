@@ -223,6 +223,12 @@ void ProcessDoorAndParking(){
 //  O,N -> SG -- need to know if the car was present at door activation time.
 //  O,X -> SG -- Same
 //  M,X -> SY -- need to know if the car was present at door activation time.
+  if(current_door_state == MOVING && from_door_state == OPEN && current_parking_state == NOCAR){
+    SetLight(true, false, false, SOLID, SOLID, SOLID);
+  }
+  if(current_door_state == MOVING && from_door_state == OPEN && (current_parking_state == NEAR || current_parking_state == STOP)){ // Door is moving as if about to leave, but car is still near.  Flash to get attention.
+    SetLight(true, false, false, FLASH, SOLID, SOLID);
+  }
 //  C,X -> SR
 //  STANDBY -> OFF
   }
