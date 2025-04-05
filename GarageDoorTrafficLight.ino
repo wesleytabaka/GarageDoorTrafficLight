@@ -10,8 +10,8 @@ const int _nocarDistance = 450; // Centimeters.  About 15 feet
 const int _nearDistance = 60; // About 2 feet
 const int _stopDistance = 4; // About 2 inches
 
-const int bennigansModeTiming[3] = {14200, 4200, 11200}; // G, Y, R
-const int bennigansModeMaxCycles = 3; // x GYR cycles then go into standby.
+const int cycleModeTiming[3] = {14200, 4200, 11200}; // G, Y, R
+const int cycleModeMaxCycles = 3; // x GYR cycles then go into standby.
 
 Mode mode = DOORANDPARKING;
 
@@ -20,7 +20,7 @@ const float _standbyInterval = 1500.0;
 
 const float flashRate = 1000.0;
 
-const float standbyTimeout = 10000.0; // Turn off after no changes.
+const float standbyTimeout = 60000.0; // Turn off after no changes.
 
 // Pin setup
 const int R_PIN = 6;
@@ -51,9 +51,9 @@ const int flashPeriodLength = floor(flashRate / _updateInterval);
 // Clock for managing Patterns
 int effectCounter = 0;
 
-// Maintain the state of Bennigans mode.
-int bennigansState = 0;
-int bennigansCycle = 0;
+// Maintain the state of Cycle mode.
+int cycleState = 0;
+int cycleCycle = 0;
 
 // Stores the on or off state of each color.
 bool R = false;
@@ -291,8 +291,8 @@ void ProcessDoor(){
   }
 }
 
-void ProcessBennigans(){
-  switch(bennigansState){
+void ProcessCycle(){
+  switch(cycleState){
     case 0:
       SetLight(false, false, true, SOLID, SOLID, SOLID);
       break;
@@ -301,13 +301,13 @@ void ProcessBennigans(){
       break;
     case 2:
       SetLight(true, false, false, SOLID, SOLID, SOLID);
-      bennigansCycle++;
+      cycleCycle++;
       break;
   }
   ShowLight();
-  delay(bennigansModeTiming[bennigansState]);
-  bennigansState = (bennigansState + 1) % 3;
-  if(bennigansCycle >= bennigansModeMaxCycles){
+  delay(cycleModeTiming[cycleState]);
+  cycleState = (cycleState + 1) % 3;
+  if(cycleCycle >= cycleModeMaxCycles){
     EnterStandby();
   }
 }
@@ -315,7 +315,7 @@ void ProcessBennigans(){
 void EnterStandby(){
   runstate = STANDBY;
   carstate = RESET;//NULL; // set "from" parking state to NULL.  or set carstate to NULL.
-  bennigansCycle = 0;
+  cycleCycle = 0;
   SetLight(false, false, false, SOLID, SOLID, SOLID); //  turn all lights off.
   ShowLight(); // Write to output pins.
 }
@@ -370,8 +370,8 @@ void loop() {
   }
   
   if(runstate == WORKING){
-    if(mode == BENNIGANS){
-      ProcessBennigans();
+    if(mode == CYCLE){
+      ProcessCycle();
     }
     
     if(mode == DOOR){
