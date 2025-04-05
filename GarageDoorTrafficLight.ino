@@ -365,7 +365,7 @@ void setup() {
 void loop() {
   Serial.println("runstate: " + String(runstate) + ".  last_tick_door_state: " + String(last_tick_door_state) + ".  " + "current_door_state: " + String(current_door_state) + ".  last_tick_parking_state: " + String(last_tick_parking_state) + "  current_parking_state: " + String(current_parking_state));
   UpdateDoorState();
-  if(current_door_state == MOVING){
+  if(current_door_state != last_tick_door_state){ // This expression should be checking if the door state has changed.
     runstate = WORKING;
   }
   
