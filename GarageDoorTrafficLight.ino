@@ -13,6 +13,9 @@ const int _stopDistance = 4; // About 2 inches
 const int cycleModeTiming[3] = {14200, 4200, 11200}; // G, Y, R
 const int cycleModeMaxCycles = 3; // x GYR cycles then go into standby.
 
+const int flashRedMaxCycles = 600;
+const int flashYellowMaxCycles = 600;
+
 Mode mode = DOORANDPARKING;
 
 const float _updateInterval = 500.0; // 
@@ -54,6 +57,12 @@ int effectCounter = 0;
 // Maintain the state of Cycle mode.
 int cycleState = 0;
 int cycleCycle = 0;
+
+// Maintain the state of FlashRed mode.
+int flashRedCycle = 0;
+
+// Maintain the state of FlashYellow mode.
+int flashYellowCycle = 0;
 
 // Stores the on or off state of each color.
 bool R = false;
@@ -312,10 +321,32 @@ void ProcessCycle(){
   }
 }
 
+void ProcessFlashRed(){
+  SetLight(true, false, false, FLASH, SOLID, SOLID);
+  ShowLight();
+  flashRedCycle++;
+  delay(_updateInterval);
+  if(flashRedCycle >= flashRedMaxCycles){
+    EnterStandby();
+  }
+}
+
+void ProcessFlashYellow(){
+  SetLight(false, true, false, SOLID, FLASH, SOLID);
+  ShowLight();
+  flashYellowCycle++;
+  delay(_updateInterval);
+  if(flashYellowCycle >= flashYellowMaxCycles){
+    EnterStandby();
+  }
+}
+
 void EnterStandby(){
   runstate = STANDBY;
   carstate = RESET;//NULL; // set "from" parking state to NULL.  or set carstate to NULL.
   cycleCycle = 0;
+  flashRedCycle = 0;
+  flashYellowCycle = 0;
   SetLight(false, false, false, SOLID, SOLID, SOLID); //  turn all lights off.
   ShowLight(); // Write to output pins.
 }
@@ -372,6 +403,16 @@ void loop() {
   if(runstate == WORKING){
     if(mode == CYCLE){
       ProcessCycle();
+    }
+
+    if(mode == FLASHRED){
+      ProcessFlashRed();
+      effectCounter = (effectCounter + 1) % flashPeriodLength;
+    }
+
+    if(mode == FLASHYELLOW){
+      ProcessFlashYellow();
+      effectCounter = (effectCounter + 1) % flashPeriodLength;
     }
     
     if(mode == DOOR){
