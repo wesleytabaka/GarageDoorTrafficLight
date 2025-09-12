@@ -136,4 +136,4 @@ This mode is not implemented to prevent ultrasonic sensors running constantly.  
 - FLASH
 
 # Disclaimer
-Use at your own risk.  Do not use this as a traffic signal controller.  I accept no liability for damages.  I'm just a guy who made a blinkenlights project.
+Use at your own risk.  Do not use this as a traffic signal controller.  Real traffic signal controllers are very robust and have failsafe features.  This does not.  I accept no liability for damages.  I'm just a guy who made a blinkenlights project.
