@@ -26,9 +26,14 @@ const float flashRate = 1000.0;
 const float standbyTimeout = 60000.0; // Turn off after no changes.
 
 // Pin setup
+// Lamp pins
 const int R_PIN = 6;
 const int Y_PIN = 10;
 const int G_PIN = 11;
+
+// Door switch pins
+const int CLOSED_PIN = 12;
+const int OPEN_PIN = 13;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -116,28 +121,17 @@ DoorState GetDoorState(){
   // read pin for open
   // read pin for closed
   // decide what the state is and return it.
-  String input = Serial.readStringUntil('-');
-  input.trim();
-  if(input.length() > 0){
-    lastInput = input;
-    if(input == "STANDBY"){
-      EnterStandby();
-    }
-    int field2 = lastInput.indexOf(",");
-    String input_door = input.substring(0, field2);
-    String input_parking = lastInput.substring(field2 + 1);
-    if(input_door == "O"){
-      return OPEN;
-    }
-    if(input_door == "C"){
-      return CLOSED;
-    }
-    if(input_door == "M"){
-      return MOVING;
-    }
+  bool doorOpen = digitalRead(OPEN_PIN) == LOW;
+  bool doorClosed = digitalRead(CLOSED_PIN) == LOW;
+
+  if(doorOpen && !doorClosed){
+    return OPEN;
   }
-  else {
-    return current_door_state;
+  if(!doorOpen && doorClosed){
+    return CLOSED;
+  }
+  if(!doorOpen && !doorClosed){
+    return MOVING;
   }
 }
 
@@ -449,6 +443,9 @@ void setup() {
   pinMode(R_PIN, OUTPUT);
   pinMode(Y_PIN, OUTPUT);
   pinMode(G_PIN, OUTPUT);
+
+  pinMode(CLOSED_PIN, INPUT);
+  pinMode(OPEN_PIN, INPUT);
   
   digitalWrite(R_PIN, HIGH);
   digitalWrite(Y_PIN, HIGH);
