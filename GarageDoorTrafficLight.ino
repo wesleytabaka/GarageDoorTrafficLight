@@ -355,6 +355,89 @@ void EnterWorking(){
   runstate = WORKING;
 }
 
+String getLampStateString(){
+  return String("\[") + (R == true ? String("R") : String(" ")) + (R_pattern == SOLID ? String(" ") : String("*")) + " " + (Y == true ? String("Y") : String(" ")) + (Y_pattern == SOLID ? String(" ") : String("*")) + " " + (G == true ? String("G") : String(" ")) + (G_pattern == SOLID ? String(" ") : String("*")) + String("\]");
+}
+
+String getModeStateString(){
+  switch(mode){
+    case OFF:
+      return "OFF           ";
+      break;
+    case DOORANDPARKING:
+      return "DOORANDPARKING";
+      break;
+    case DOOR:
+      return "DOOR          ";
+      break;
+    case PARKING:
+      return "PARKING       ";
+      break;
+    case CYCLE:
+      return "CYCLE         ";
+      break;
+    case FLASHRED:
+      return "FLASHRED      ";
+      break;
+    case FLASHYELLOW:
+      return "FLASHYELLOW   ";
+      break;
+  }
+}
+
+String getRunStateString(){
+  switch(runstate){
+    case WORKING:
+      return "WORKING";
+      break;
+    case STANDBY:
+      return "STANDBY";
+      break;
+  }
+}
+
+String getDoorStateString(){
+  switch(current_door_state){
+    case CLOSED:
+      return "CLOSED   ";
+      break;
+    case MOVING:
+      return "MOVING   ";
+      break;
+    case OPEN:
+      return "OPEN     ";
+      break;
+  }
+}
+
+String getCarStateString(){
+  switch(carstate){
+    case RESET:
+      return "RESET   ";
+      break;
+    case ARRIVING:
+      return "ARRIVING";
+      break;
+    case LEAVING:
+      return "LEAVING ";
+      break;
+  }
+}
+
+String getParkingStateString(){
+  switch(current_parking_state){
+    case NOCAR:
+      return "NOCAR";
+      break;
+    case NEAR:
+      return "NEAR ";
+      break;
+    case STOP:
+      return "STOP ";
+      break;
+  }
+}
+
 /////////////////////////////////////////////////////////////////////////////////////////////////
 //
 //  Initial conditions
@@ -394,7 +477,7 @@ void setup() {
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 void loop() {
-  Serial.println("runstate: " + String(runstate) + ".  last_tick_door_state: " + String(last_tick_door_state) + ".  " + "current_door_state: " + String(current_door_state) + ".  last_tick_parking_state: " + String(last_tick_parking_state) + "  current_parking_state: " + String(current_parking_state));
+  Serial.println(getLampStateString() + ", " + getModeStateString() + ", " + getRunStateString() + ", " + getDoorStateString() + ", " + getCarStateString() + ", " + getParkingStateString());
   UpdateDoorState();
   if(current_door_state != last_tick_door_state){ // This expression should be checking if the door state has changed.
     runstate = WORKING;
