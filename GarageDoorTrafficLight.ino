@@ -35,6 +35,10 @@ const int G_PIN = 11;
 const int CLOSED_PIN = 12;
 const int OPEN_PIN = 13;
 
+// Parking sensor pins
+const int PARK_TRIG_PIN = 2;
+const int PARK_ECHO_PIN = 3;
+
 /////////////////////////////////////////////////////////////////////////////////////////////////
 //
 //  Do not edit below this line
@@ -135,31 +139,32 @@ DoorState GetDoorState(){
   }
 }
 
+float getParkingDistance(){
+  digitalWrite(PARK_TRIG_PIN, LOW);
+  delayMicroseconds(2);
+  digitalWrite(PARK_TRIG_PIN, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(PARK_TRIG_PIN, LOW);
+
+  float duration = pulseIn(PARK_ECHO_PIN, HIGH);
+  float distance = (duration*.0343)/2;
+
+  return distance;
+}
+
 // Real world state from sensors.  This is implemented with serial input while on the bench and without real sensors.
 ParkingState GetParkingState(){
-    // read pin for open
-  // read pin for closed
-  // decide what the state is and return it.
-//  Serial.println("Enter door state: O, C, M (Open, Closed, Moving): ");
-//  String input = Serial.readStringUntil('-');
-//  input.trim();
-//  if(input.length() > 0){
-    int field2 = lastInput.indexOf(",");
-    String input_door = lastInput.substring(0, field2);
-    String input_parking = lastInput.substring(field2 + 1);
-    if(input_parking == "X"){
-      return NOCAR;
-    }
-    if(input_parking == "N"){
-      return NEAR;
-    }
-    if(input_parking == "S"){
-      return STOP;
-    }
-//  }
-//  else {
-//    return current_parking_state;
-//  }
+  float distance = getParkingDistance();
+
+  if(distance >= _nearDistance){
+    return NOCAR;
+  }
+  if(distance >= _stopDistance && distance < _nearDistance){
+    return NEAR;
+  }
+  if(distance < _stopDistance){
+    return STOP;
+  }
 }
 
 // Sets the last state and next state for the door.
@@ -446,10 +451,15 @@ void setup() {
 
   pinMode(CLOSED_PIN, INPUT);
   pinMode(OPEN_PIN, INPUT);
+
+  pinMode(PARK_TRIG_PIN, OUTPUT);
+  pinMode(PARK_ECHO_PIN, INPUT);
   
   digitalWrite(R_PIN, HIGH);
   digitalWrite(Y_PIN, HIGH);
   digitalWrite(G_PIN, HIGH);
+
+  digitalWrite(PARK_TRIG_PIN, LOW);
 
   Serial.begin(9600);
   Serial.setTimeout(0);
