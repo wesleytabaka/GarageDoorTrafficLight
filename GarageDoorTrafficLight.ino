@@ -39,6 +39,11 @@ const int OPEN_PIN = 13;
 const int PARK_TRIG_PIN = 2;
 const int PARK_ECHO_PIN = 3;
 
+// Mode select pin
+// When this pin goes LOW, it triggers the mode selection function.
+// Only certain pins allow for interrupts.  Check your specific device.
+const int MODE_SELECT_PIN = 1;
+
 /////////////////////////////////////////////////////////////////////////////////////////////////
 //
 //  Do not edit below this line
@@ -354,6 +359,23 @@ void EnterWorking(){
   runstate = WORKING;
 }
 
+void ModeSelectInterrupt(){
+  EnterWorking();
+}
+
+bool CheckForModeSelect(){
+  if(digitalRead(MODE_SELECT_PIN) == LOW){
+    mode = (mode + 1) % 7;
+    int thisMode = mode + 1;
+    SetLight((thisMode & 100) >> 2, (thisMode & 10) >> 1, thisMode & 1, SOLID, SOLID, SOLID);
+    ShowLight();
+    delay(1000);
+    return true;
+  }
+  SetLight(false, false, false, SOLID, SOLID, SOLID);
+  return false;
+}
+
 String getLampStateString(){
   return String("\[") + (R == true ? String("R") : String(" ")) + (R_pattern == SOLID ? String(" ") : String("*")) + " " + (Y == true ? String("Y") : String(" ")) + (Y_pattern == SOLID ? String(" ") : String("*")) + " " + (G == true ? String("G") : String(" ")) + (G_pattern == SOLID ? String(" ") : String("*")) + String("\]");
 }
@@ -454,6 +476,10 @@ void setup() {
 
   pinMode(PARK_TRIG_PIN, OUTPUT);
   pinMode(PARK_ECHO_PIN, INPUT);
+
+  pinMode(MODE_SELECT_PIN, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(MODE_SELECT_PIN), ModeSelectInterrupt, LOW);
+
   
   digitalWrite(R_PIN, HIGH);
   digitalWrite(Y_PIN, HIGH);
@@ -485,6 +511,8 @@ void setup() {
 /////////////////////////////////////////////////////////////////////////////////////////////////
 void loop() {
   Serial.println(getLampStateString() + ", " + getModeStateString() + ", " + getRunStateString() + ", " + getDoorStateString() + ", " + getCarStateString() + ", " + getParkingStateString());
+  if(!CheckForModeSelect()){
+  
   UpdateDoorState();
   if(current_door_state != last_tick_door_state){ // This expression should be checking if the door state has changed.
     runstate = WORKING;
@@ -503,6 +531,11 @@ void loop() {
     if(mode == FLASHYELLOW){
       ProcessFlashYellow();
       effectCounter = (effectCounter + 1) % flashPeriodLength;
+    }
+
+    if(mode == PARKING){
+      // Not implemented.
+      delay(_standbyInterval);
     }
     
     if(mode == DOOR){
@@ -532,6 +565,11 @@ void loop() {
       delay(_updateInterval);
     }
 
+    if(mode == OFF){
+      EnterStandby();
+      delay(_standbyInterval);
+    }
+
     if(standbyTimeoutRemaining <= 0.0){
       EnterStandby();
     }
@@ -540,5 +578,6 @@ void loop() {
   
   if(runstate == STANDBY){
     delay(_standbyInterval);
+  }
   }
 }
