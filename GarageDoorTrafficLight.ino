@@ -498,6 +498,10 @@ void setup() {
   if(current_door_state == CLOSED){
     next_door_state = OPEN;
   }
+  if(current_door_state == MOVING){
+    from_door_state = OPEN;
+    next_door_state = CLOSED;
+  }
 
   standbyTimeoutRemaining = standbyTimeout;
 }
