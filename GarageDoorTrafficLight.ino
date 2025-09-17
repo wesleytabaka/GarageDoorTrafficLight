@@ -109,6 +109,8 @@ ParkingState from_parking_state = NULL;
 ParkingState next_parking_state = NULL;
 ParkingState last_tick_parking_state = NULL;
 
+float parkingDistance = NULL;
+
 /////////////////////////////////////////////////////////////////////////////////////////////////
 //
 //  Helper functions
@@ -152,9 +154,9 @@ float getParkingDistance(){
   digitalWrite(PARK_TRIG_PIN, LOW);
 
   float duration = pulseIn(PARK_ECHO_PIN, HIGH);
-  float distance = (duration*.0343)/2;
+  parkingDistance = (duration*.0343)/2;
 
-  return distance;
+  return parkingDistance;
 }
 
 // Real world state from sensors.  This is implemented with serial input while on the bench and without real sensors.
@@ -514,7 +516,7 @@ void setup() {
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 void loop() {
-  Serial.println(getLampStateString() + ", " + getModeStateString() + ", " + getRunStateString() + ", " + getDoorStateString() + ", " + getCarStateString() + ", " + getParkingStateString());
+  Serial.println(getLampStateString() + ", " + getModeStateString() + ", " + getRunStateString() + ", " + getDoorStateString() + ", " + getCarStateString() + ", " + getParkingStateString() + ", " + parkingDistance);
   if(!CheckForModeSelect()){
   
   UpdateDoorState();
