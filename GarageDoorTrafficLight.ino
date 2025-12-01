@@ -473,8 +473,8 @@ void setup() {
   pinMode(Y_PIN, OUTPUT);
   pinMode(G_PIN, OUTPUT);
 
-  pinMode(CLOSED_PIN, INPUT);
-  pinMode(OPEN_PIN, INPUT);
+  pinMode(CLOSED_PIN, INPUT_PULLUP);
+  pinMode(OPEN_PIN, INPUT_PULLUP);
 
   pinMode(PARK_TRIG_PIN, OUTPUT);
   pinMode(PARK_ECHO_PIN, INPUT);
